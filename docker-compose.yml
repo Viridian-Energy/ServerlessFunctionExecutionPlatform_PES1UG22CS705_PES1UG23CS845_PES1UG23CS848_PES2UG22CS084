@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      # For Windows Docker Desktop:
+      - //var/run/docker.sock:/var/run/docker.sock
+      # Uncomment the line below and comment the line above if using Docker on Windows with named pipe
+      # - //./pipe/docker_engine:/var/run/docker.sock
+      - node_modules:/usr/src/app/node_modules
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/serverless-platform
+      - PORT=3000
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  node_modules:
+  mongo_data:

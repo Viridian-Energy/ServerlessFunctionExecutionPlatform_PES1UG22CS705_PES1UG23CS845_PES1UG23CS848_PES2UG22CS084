@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serverless Function Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .code-editor {
+            font-family: monospace;
+            min-height: 300px;
+            width: 100%;
+        }
+        .function-card {
+            margin-bottom: 15px;
+        }
+        .tab-content {
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="#">Serverless Function Platform</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="functions-tab" data-bs-toggle="tab" data-bs-target="#functions" type="button" role="tab">Functions</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab">Create Function</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab">Metrics</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Functions List Tab -->
+        <div class="tab-pane fade show active" id="functions" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Functions</h2>
+                <button class="btn btn-primary" id="refresh-functions">Refresh</button>
+            </div>
+            <div id="functions-list" class="row">
+                <!-- Functions will be loaded here -->
+                <div class="col-12 text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Function Tab -->
+        <div class="tab-pane fade" id="create" role="tabpanel">
+            <h2>Create New Function</h2>
+            <form id="create-function-form">
+                <div class="mb-3">
+                    <label for="function-name" class="form-label">Function Name</label>
+                    <input type="text" class="form-control" id="function-name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="function-route" class="form-label">Route Path</label>
+                    <div class="input-group">
+                        <span class="input-group-text">/invoke/</span>
+                        <input type="text" class="form-control" id="function-route" required>
+                    </div>
+                    <div class="form-text">This will be the endpoint to invoke your function.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="function-language" class="form-label">Language</label>
+                    <select class="form-select" id="function-language" required>
+                        <option value="javascript">JavaScript (Node.js)</option>
+                        <option value="python">Python</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="function-timeout" class="form-label">Timeout (ms)</label>
+                    <input type="number" class="form-control" id="function-timeout" value="30000" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="function-code" class="form-label">Function Code</label>
+                    <textarea class="form-control code-editor" id="function-code" rows="10" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Templates</label>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary" id="js-template">JS Template</button>
+                        <button type="button" class="btn btn-outline-secondary" id="py-template">Python Template</button>
+                        <button type="button" class="btn btn-outline-secondary" id="js-calc-template">JS Calculator</button>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success">Create Function</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Metrics Tab -->
+        <div class="tab-pane fade" id="metrics" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Execution Metrics</h2>
+                <button class="btn btn-primary" id="refresh-metrics">Refresh</button>
+            </div>
+            <div id="metrics-list">
+                <!-- Metrics will be loaded here -->
+                <p>Metrics functionality will be implemented in the next phase.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Function Test Modal -->
+<div class="modal fade" id="test-function-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test Function: <span id="test-function-name"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="test-function-form">
+                    <div class="mb-3">
+                        <label class="form-label">Request Body (JSON)</label>
+                        <textarea class="form-control code-editor" id="test-request-body" rows="5">{}</textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Execute Function</button>
+                    </div>
+                </form>
+
+                <div class="mt-4">
+                    <h6>Response:</h6>
+                    <div class="card">
+                        <div class="card-body">
+                            <pre id="test-response" class="mb-0">No response yet</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // DOM Elements
+    const functionsList = document.getElementById('functions-list');
+    const createFunctionForm = document.getElementById('create-function-form');
+    const testFunctionForm = document.getElementById('test-function-form');
+    const testFunctionModal = document.getElementById('test-function-modal');
+    const testFunctionName = document.getElementById('test-function-name');
+    const testRequestBody = document.getElementById('test-request-body');
+    const testResponse = document.getElementById('test-response');
+    const functionCode = document.getElementById('function-code');
+    const functionLanguage = document.getElementById('function-language');
+
+    // Global variables
+    let currentTestFunction = null;
+
+    // Template code
+    const jsTemplate = `const fs = require('fs');
+
+async function main() {
+  try {
+    // Read input
+    const inputPath = '/app/input.json';
+    const inputData = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+    const { body, query, params } = inputData;
+
+    // Your function logic goes here
+    const result = {
+      message: "Hello from serverless function!",
+      receivedData: {
+        body,
+        query,
+        params
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    // Write output
+    fs.writeFileSync('/app/output.json', JSON.stringify(result));
+    process.exit(0);
+  } catch (error) {
+    console.error('Error:', error);
+    fs.writeFileSync('/app/output.json', JSON.stringify({ error: error.message }));
+    process.exit(1);
+  }
+}
+
+main();`;
+
+    const pyTemplate = `import json
+import sys
+import os
+from datetime import datetime
+
+def main():
+    try:
+        # Read input
+        input_path = '/app/input.json'
+        with open(input_path, 'r') as f:
+            input_data = json.load(f)
+
+        body = input_data.get('body', {})
+        query = input_data.get('query', {})
+        params = input_data.get('params', {})
+
+        # Your function logic goes here
+        result = {
+            "message": "Hello from serverless Python function!",
+            "receivedData": {
+                "body": body,
+                "query": query,
+                "params": params
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+
+        # Write output
+        with open('/app/output.json', 'w') as f:
+            json.dump(result, f)
+
+        sys.exit(0)
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
+
+        with open('/app/output.json', 'w') as f:
+            json.dump({"error": str(e)}, f)
+
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()`;
+
+    const jsCalcTemplate = `const fs = require('fs');
+
+async function main() {
+  try {
+    // Read input
+    const inputPath = '/app/input.json';
+    const inputData = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+    const body = inputData.body || {};
+
+    // Get numbers from request body
+    const num1 = parseFloat(body.num1);
+    const num2 = parseFloat(body.num2);
+    const operation = body.operation || 'add';
+
+    if (isNaN(num1) || isNaN(num2)) {
+      throw new Error('Invalid numbers provided');
+    }
+
+    // Perform calculation
+    let result;
+    switch (operation) {
+      case 'add':
+        result = num1 + num2;
+        break;
+      case 'subtract':
+        result = num1 - num2;
+        break;
+      case 'multiply':
+        result = num1 * num2;
+        break;
+      case 'divide':
+        if (num2 === 0) throw new Error('Division by zero');
+        result = num1 / num2;
+        break;
+      default:
+        throw new Error('Invalid operation');
+    }
+
+    // Write result
+    fs.writeFileSync('/app/output.json', JSON.stringify({
+      operation,
+      num1,
+      num2,
+      result
+    }));
+
+    process.exit(0);
+  } catch (error) {
+    console.error('Error:', error);
+    fs.writeFileSync('/app/output.json', JSON.stringify({ error: error.message }));
+    process.exit(1);
+  }
+}
+
+main();`;
+
+    // Load Functions
+    async function loadFunctions() {
+        try {
+            const response = await fetch('/api/functions');
+            const functions = await response.json();
+
+            if (functions.length === 0) {
+                functionsList.innerHTML = '<div class="col-12"><div class="alert alert-info">No functions found. Create your first function!</div></div>';
+                return;
+            }
+
+            functionsList.innerHTML = functions.map(func => `
+          <div class="col-md-6 col-lg-4">
+            <div class="card function-card">
+              <div class="card-body">
+                <h5 class="card-title">${func.name}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">Route: /invoke/${func.route}</h6>
+                <p class="card-text">Language: ${func.language}<br>Timeout: ${func.timeout}ms</p>
+                <div class="d-flex justify-content-between">
+                  <button class="btn btn-sm btn-primary test-function" data-id="${func._id}" data-name="${func.name}" data-route="${func.route}">Test</button>
+                  <button class="btn btn-sm btn-danger delete-function" data-id="${func._id}">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+            // Add event listeners to newly created buttons
+            document.querySelectorAll('.test-function').forEach(button => {
+                button.addEventListener('click', () => openTestModal(button.dataset.id, button.dataset.name, button.dataset.route));
+            });
+
+            document.querySelectorAll('.delete-function').forEach(button => {
+                button.addEventListener('click', () => deleteFunction(button.dataset.id));
+            });
+        } catch (error) {
+            console.error('Error loading functions:', error);
+            functionsList.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading functions. Please try again.</div></div>';
+        }
+    }
+
+    // Create Function
+    async function createFunction(event) {
+        event.preventDefault();
+
+        const functionData = {
+            name: document.getElementById('function-name').value,
+            route: document.getElementById('function-route').value,
+            language: document.getElementById('function-language').value,
+            timeout: parseInt(document.getElementById('function-timeout').value),
+            code: document.getElementById('function-code').value
+        };
+
+        try {
+            const response = await fetch('/api/functions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(functionData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to create function');
+            }
+
+            alert('Function created successfully!');
+            createFunctionForm.reset();
+
+            // Switch to functions tab
+            document.getElementById('functions-tab').click();
+            loadFunctions();
+        } catch (error) {
+            console.error('Error creating function:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    // Delete Function
+    async function deleteFunction(id) {
+        if (!confirm('Are you sure you want to delete this function?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/functions/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to delete function');
+            }
+
+            alert('Function deleted successfully!');
+            loadFunctions();
+        } catch (error) {
+            console.error('Error deleting function:', error);
+            alert(`Error: ${error.message}`);
+        }
+    }
+
+    // Open Test Modal
+    function openTestModal(id, name, route) {
+        currentTestFunction = { id, route };
+        testFunctionName.textContent = name;
+        testRequestBody.value = '{}';
+        testResponse.textContent = 'No response yet';
+
+        const modal = new bootstrap.Modal(testFunctionModal);
+        modal.show();
+    }
+
+    // Test Function
+    async function testFunction(event) {
+        event.preventDefault();
+
+        if (!currentTestFunction) {
+            alert('No function selected');
+            return;
+        }
+
+        try {
+            let requestBody = {};
+            try {
+                requestBody = JSON.parse(testRequestBody.value);
+            } catch (e) {
+                throw new Error('Invalid JSON in request body');
+            }
+
+            testResponse.textContent = 'Executing function...';
+
+            const response = await fetch(`/invoke/${currentTestFunction.route}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            const result = await response.json();
+
+            testResponse.textContent = JSON.stringify(result, null, 2);
+        } catch (error) {
+            console.error('Error testing function:', error);
+            testResponse.textContent = `Error: ${error.message}`;
+        }
+    }
+
+    // Set template code
+    function setTemplate(template) {
+        functionCode.value = template;
+    }
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFunctions();
+
+        createFunctionForm.addEventListener('submit', createFunction);
+        testFunctionForm.addEventListener('submit', testFunction);
+
+        document.getElementById('refresh-functions').addEventListener('click', loadFunctions);
+
+        // Add template buttons
+        document.getElementById('js-template').addEventListener('click', () => {
+            functionLanguage.value = 'javascript';
+            setTemplate(jsTemplate);
+        });
+
+        document.getElementById('py-template').addEventListener('click', () => {
+            functionLanguage.value = 'python';
+            setTemplate(pyTemplate);
+        });
+
+        document.getElementById('js-calc-template').addEventListener('click', () => {
+            functionLanguage.value = 'javascript';
+            setTemplate(jsCalcTemplate);
+        });
+    });
+</script>
+</body>
+</html>
